@@ -113,9 +113,10 @@ curl -Ls "https://download.gnome.org/sources/glib/2.86/glib-$VERSION_GLIB.tar.xz
     meson install -C _build --tag devel)
 
 # glib >= 2.74 compiles PCRE2 directly into libglib-2.0.a instead of emitting
-# a standalone archive, but tilibs' Makefile still links against
-# libpcre2-8.a explicitly (and nothing in tilibs actually uses GRegex) - an
-# empty archive satisfies that link input without pulling in real pcre2.
+# a standalone archive. webtilp/Makefile no longer links libpcre2-8.a
+# explicitly (upstream dropped it), but this empty archive is left in place
+# so this stage's Docker layer cache isn't invalidated by removing it -
+# it's simply unreferenced now, not harmful.
 emar rcs "$GLIB_TARGET/lib/libpcre2-8.a"
 EOF
 
@@ -210,6 +211,8 @@ emcmake cmake .. -GNinja \
     -DBUILD_SHARED_LIBS=OFF \
     -DBUILD_TESTS=OFF \
     -DBUILD_TIFILEUTIL=OFF \
+    -DZLIB_INCLUDE_DIR=/work/tilibs/glib-emscripten-built/include \
+    -DZLIB_LIBRARY=/work/tilibs/glib-emscripten-built/lib/libz.a \
     -DCMAKE_C_FLAGS=-pthread \
     -DCMAKE_CXX_FLAGS=-pthread
 cmake --build .
